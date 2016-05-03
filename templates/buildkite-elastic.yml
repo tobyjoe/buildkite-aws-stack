@@ -27,6 +27,7 @@ Metadata:
         - KeyName
         - SpotPrice
         - SecretsBucket
+        - ArtifactsBucket
         - AuthorizedUsersUrl
         - RootVolumeSize
         - RootVolumeIops
@@ -65,7 +66,12 @@ Parameters:
     Default: elastic
 
   SecretsBucket:
-    Description: An s3 bucket containing provisioning files
+    Description: An S3 bucket containing provisioning files
+    Type: String
+    Default: ""
+
+  ArtifactsBucket:
+    Description: An S3 bucket containing build artifacts
     Type: String
     Default: ""
 
@@ -145,6 +151,9 @@ Conditions:
     UseSecretsBucket:
       !Not [ !Equals [ $(SecretsBucket), "" ] ]
 
+    UseArtifactsBucket:
+      !Not [ !Equals [ $(ArtifactsBucket), "" ] ]
+
     UseDefaultAMI:
       !Equals [ $(ImageId), "" ]
 
@@ -210,6 +219,23 @@ Resources:
       Roles:
         - $(IAMRole)
 
+  ArtifactsBucketPolicies:
+    Type: AWS::IAM::Policy
+    Condition: UseArtifactsBucket
+    Properties:
+      PolicyName: ArtifactsBucketPolicy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:Put*
+              - s3:List*
+            Resource:
+              - "arn:aws:s3:::$(ArtifactsBucket)/*"
+              - "arn:aws:s3:::$(ArtifactsBucket)"
+      Roles:
+        - $(IAMRole)
+
   AgentLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -243,6 +269,7 @@ Resources:
                 cat << EOF > /var/lib/buildkite-agent/cfn-env
                 BUILDKITE_STACK_NAME=$(AWS::StackName)
                 BUILDKITE_SECRETS_BUCKET=$(SecretsBucket)
+                BUILDKITE_ARTIFACT_UPLOAD_DESTINATION=s3://$(ArtifactsBucket)/$BUILDKITE_PIPELINE_SLUG/$BUILDKITE_JOB_ID
                 EOF
                 chown buildkite-agent: /var/lib/buildkite-agent/cfn-env
             02-install-buildkite:
