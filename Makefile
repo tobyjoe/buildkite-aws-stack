@@ -1,7 +1,7 @@
 
 .PHONY: all clean build build-ami upload create-stack
 
-all: build
+all: setup build
 
 build: build/aws-stack.json
 
@@ -14,12 +14,12 @@ build/aws-stack.json: $(wildcard templates/*.yml)
 	bundle exec cfoo $^ > $@
 
 setup:
-	which bundle || gem install bundler --no-ri --no-rdoc
-	bundle install --path vendor/bundle
+	bundle check || ((which bundle || gem install bundler --no-ri --no-rdoc) && bundle install --path vendor/bundle)
+	cp config.json.example config.json
 
 clean:
-	-rm build/*
-	-rm templates/mappings.yml
+	-rm -f build/*
+	-rm -f templates/mappings.yml
 
 build-ami:
 	cd packer/; packer build buildkite-ami.json
@@ -30,14 +30,25 @@ upload: build/aws-stack.json
 create-stack: templates/mappings.yml build/aws-stack.json
 	aws cloudformation create-stack \
 	--output text \
-	--stack-name buildkite-$(shell date +%Y-%m-%d-%H-%M) \
+	--stack-name buildkite \
 	--disable-rollback \
 	--template-body "file://${PWD}/build/aws-stack.json" \
 	--capabilities CAPABILITY_IAM \
-	--parameters '$(shell cat config.json)'
+	--parameters '$(shell cat config.json)' \
+	--profile "$(AWS_PROFILE)"
 
 validate: build/aws-stack.json
 	aws cloudformation validate-template \
 	--output table \
 	--template-body "file://${PWD}/build/aws-stack.json"
+
+update-stack: templates/mappings.yml build/aws-stack.json
+	aws cloudformation update-stack \
+	--output text \
+	--stack-name buildkite \
+	--template-body "file://${PWD}/build/aws-stack.json" \
+	--capabilities CAPABILITY_IAM \
+	--parameters '$(shell cat config.json)' \
+	--profile "$(AWS_PROFILE)"
+
 

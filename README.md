@@ -10,15 +10,10 @@ The easiest way is to launch the latest built version via this button:
 
 [![Launch Buildkite AWS Stack](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/images/cloudformation-launch-stack-button.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=buildkite&templateURL=https://s3.amazonaws.com/buildkite-aws-stack/aws-stack.json)
 
-If you'd like to use the CLI, download [`config.json.example`](config.json.example) to `config.json` and then run the below command to create a new stack.
+If you'd like to use the CLI, clone this repo and then run the below command to create a new stack.
 
 ```bash
-aws cloudformation create-stack \
-  --output text \
-  --stack-name buildkite \
-  --template-url "https://s3.amazonaws.com/buildkite-aws-stack/aws-stack.json" \
-  --capabilities CAPABILITY_IAM \
-  --parameters <(cat config.json)
+make && make create-stack
 ```
 
 ### Useful Stack Parameters
@@ -31,6 +26,7 @@ aws cloudformation create-stack \
 | BuildkiteApiAccessToken      | A Buildkite API token for metrics                                    |                 |
 | BuildkiteQueue               | The Buildkite queue to give the agents                               | elastic         |
 | SecretsBucket                | An S3 bucket (and optional prefix) that contains secrets             |                 |
+| ArtifactsBucket              | An S3 bucket (and optional prefix) that contains build artifacts     |                 |
 | InstanceType                 | The EC2 instance size to launch                                      | t2.nano         |
 | MinSize                      | The minimum number of instances to launch                            | 0               |
 | MaxSize                      | The maximum number of instances to launch                            | 10              |
@@ -75,7 +71,7 @@ For Docker Hub credentials, you can use `DOCKER_HUB_USER`, `DOCKER_HUB_PASSWORD`
 
 ## Autoscaling
 
-If you provided a `BuildkiteApiAccessToken`, a Buildkite API token with `read_builds` and `read_agents` permissions across your organiaation, then build and job metrics will be collected for your queue and used to scale your cluster of agents. Autoscaling is designed to scale up quite quickly and then gradually scale down. See [the autoscale.yml template](templates/autoscale.yml) for more details, or the [Buildkite Metrics Publisher](https://github.com/buildkite/buildkite-cloudwatch-metrics-publisher) project for how metrics are collected.
+If you provided a `BuildkiteApiAccessToken`, a Buildkite API token with `read_builds` and `read_agents` permissions across your organization, then build and job metrics will be collected for your queue and used to scale your cluster of agents. Autoscaling is designed to scale up quite quickly and then gradually scale down. See [the autoscale.yml template](templates/autoscale.yml) for more details, or the [Buildkite Metrics Publisher](https://github.com/buildkite/buildkite-cloudwatch-metrics-publisher) project for how metrics are collected.
 
 ## Security
 

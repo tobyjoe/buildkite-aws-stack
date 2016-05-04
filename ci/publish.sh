@@ -10,5 +10,5 @@ Mappings:
 EOF
 
 make setup build
-aws s3 cp --acl public-read templates/mappings.yml "s3://buildkite-aws-stack/mappings.yml"
-aws s3 cp --acl public-read build/aws-stack.json "s3://buildkite-aws-stack/aws-stack.json"
+aws s3 cp --acl public-read templates/mappings.yml "s3://$BUILDKITE_AWS_STACK_BUCKET/mappings.yml"
+aws s3 cp --acl public-read build/aws-stack.json "s3://$BUILDKITE_AWS_STACK_BUCKET/aws-stack.json"
